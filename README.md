@@ -1,0 +1,3 @@
+# QUEST2023
+Calculating percent cover of CoralNet export for multiple transects, applying unique label sets to data, and compiling percent cover data per transect with fish data per transect.
+This code was written for a project in my QUEST (University of Hawaii MOP) project, investigating the relationship between benthic cover and juvinile surgeonfish abundance at Leleiwi beach, Hawaii. Multiple transects were completed, fish data was collected via observation and benthic cover was collected via photogrammetry and CoralNet annotations. These annotations needed to be converted into percent cover, and data needed to be merged into master dataframe for statistical analysis. All of which was done in R.
