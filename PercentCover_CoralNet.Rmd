@@ -1,5 +1,6 @@
 ---
 title: "How to Calculate % Benthic Cover for multiple transects from Coral Net Export, and apply unique labelsets, and merge fish survey data per transect"
+author: "Alexis Provencal"
 output:
   pdf_document: default
   html_document: default
