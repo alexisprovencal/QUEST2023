@@ -1,0 +1,212 @@
+---
+title: "How to Calculate % Benthic Cover for multiple transects from Coral Net Export, and apply unique labelsets, and merge fish survey data per transect"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-05-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Load Packages & Data, include=FALSE}
+#Load in Packages
+library(reshape2)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+
+#Load in coral net export data as csv file
+df <- read.csv(here("Data", "2023_CoralNetExportQUEST"))
+
+#Load in fish survey data as csv file
+fishrawdf <- read.csv(here("Data", "2023_FishdataQUEST"))
+
+#Load in algae labelset
+algaelabelset <- read.csv(here("Data", "2023_AlgaelabelsetQUEST"))
+
+#Load in base labelset
+baselabelset <- read.csv(here("Data", "2023_BaselabelsetQUEST"))
+
+#Load in PCOM labelset
+PCOMlabelset <- read.csv(here("Data", "2023_PCOMlabelsetQUEST"))
+
+```
+##Exported labels
+```{r Percent Cover of Labels, df}
+
+# Calculate total counts per transect and label from df
+#Count = 1
+T_label <- aggregate(Count ~ Label + T_number, data = df, FUN = sum)
+
+# Calculate percent cover for each transect and category
+T_label$Percent_Cover <- ave(T_label$Count, T_label$T_number, FUN = function(x) 100 * x / sum(x))
+
+# Sort the table by transect and percent cover in descending order
+T_label <- T_label[order(T_label$T_number, -T_label$Percent_Cover), ]
+
+# Download table as .csv file (it saves in the folder you saved as the working directory)
+write.csv(T_label, file = "%cover_labels.csv", row.names = FALSE)
+  #file = "NAME OF FILE.csv"
+
+```
+##Baselabelset
+```{r Merging Data (df + Functional_group, via baselabelset)}
+merged_data <- merge(df, baselabelset, by = "Label", all.x = TRUE)
+df$Functional_group <- merged_data$Functional_group
+write.csv(df, "df_with_functionalgroup_baselabelset.csv", row.names = FALSE)
+```
+```{r Percent Cover of Functional Groups, baselabelset}
+# Calculate total counts per transect and label from merged_data
+#Count = 1, for every cell in "Count" column
+T_group <- aggregate(Count ~ Functional_group + T_number, data = merged_data, FUN = sum)
+
+# Calculate percent cover for each transect and category
+T_group$Percent_Cover <- ave(T_group$Count, T_group$T_number, FUN = function(x) 100 * x / sum(x))
+
+# Sort the table by transect and percent cover in descending order
+T_group <- T_group[order(T_group$T_number, -T_group$Percent_Cover), ]
+
+# Download table as .csv file (it saves in the folder you saved as the working directory)
+write.csv(T_group, file = "%cover_groups.csv", row.names = FALSE)
+  #file = "NAME OF FILE.csv"
+```
+```{r Making dataframe of T_group data for statistical analyses}
+# Create the new dataframe with one row per unique T_number
+new_df1 <- T_group %>%
+  pivot_wider(
+    names_from = Functional_group,
+    values_from = Percent_Cover,
+    values_fill = 0)  # Replace missing values with 0 if any
+
+#Summing new dataframe
+S_T_group_base <- new_df1 %>%
+  group_by(T_number) %>%
+  summarise_all(sum) %>%
+  ungroup()
+
+# Download table as .csv file (it saves in the folder you saved as the working directory)
+write.csv(S_T_group_base, file = "%cover_groups_baselabelset_final.csv", row.names = FALSE)
+  #file = "NAME OF FILE.csv"
+```
+##PCOMlabelset
+```{r Merging Data (df + Functional_group, via PCOMlabelset)}
+merged_dataPCOM <- merge(df, PCOMlabelset, by = "Label", all.x = TRUE)
+df$Functional_group <- merged_dataPCOM$Functional_group
+write.csv(df, "df_with_functionalgroup_PCOMlabelset.csv", row.names = FALSE)
+```
+```{r Percent Cover of Functional Groups, PCOMlabelset}
+# Calculate total counts per transect and label from merged_dataPCOM
+#Count = 1, for every cell in "Count" column
+T_group_PCOM <- aggregate(Count ~ Functional_group + T_number, data = merged_dataPCOM, FUN = sum)
+
+# Calculate percent cover for each transect and category
+T_group_PCOM$Percent_Cover <- ave(T_group_PCOM$Count, T_group_PCOM$T_number, FUN = function(x) 100 * x / sum(x))
+
+# Sort the table by transect and percent cover in descending order
+T_group_PCOM <- T_group_PCOM[order(T_group_PCOM$T_number, -T_group_PCOM$Percent_Cover), ]
+
+# Download table as .csv file (it saves in the folder you saved as the working directory)
+write.csv(T_group_PCOM, file = "%cover_groups_PCOMlabelset.csv", row.names = FALSE)
+  #file = "NAME OF FILE.csv"
+```
+```{r Making dataframe of T_group_PCOM for statistical analyses}
+# Create the new dataframe with one row per unique T_number
+new_df2 <- T_group_PCOM %>%
+  pivot_wider(
+    names_from = Functional_group,
+    values_from = Percent_Cover,
+    values_fill = 0)  # Replace missing values with 0 if any
+
+#Summing new dataframe
+S_T_group_PCOM <- new_df2 %>%
+  group_by(T_number) %>%
+  summarise_all(sum) %>%
+  ungroup()
+
+# Download table as .csv file (it saves in the folder you saved as the working directory)
+write.csv(S_T_group_PCOM, file = "df_%cover_groups_PCOMlabelset_final.csv", row.names = FALSE)
+  #file = "NAME OF FILE.csv"
+```
+
+##Algaelabelset
+```{r Merging Data (df + Functional_group, via algaelabelset)}
+merged_dataalgae <- merge(df, algaelabelset, by = "Label", all.x = TRUE)
+df$Functional_group <- merged_dataalgae$Functional_group
+write.csv(df, "df_with_functionalgroup_algaelabelset.csv", row.names = FALSE)
+```
+```{r Percent Cover of Functional Groups, algaelabelset}
+# Calculate total counts per transect and label from merged_dataPCOM
+#Count = 1, for every cell in "Count" column
+T_group_algae <- aggregate(Count ~ Functional_group + T_number, data = merged_dataalgae, FUN = sum)
+
+# Calculate percent cover for each transect and category
+T_group_algae$Percent_Cover <- ave(T_group_algae$Count, T_group_algae$T_number, FUN = function(x) 100 * x / sum(x))
+
+# Sort the table by transect and percent cover in descending order
+T_group_algae <- T_group_algae[order(T_group_algae$T_number, -T_group_algae$Percent_Cover), ]
+
+# Download table as .csv file (it saves in the folder you saved as the working directory)
+write.csv(T_group_algae, file = "%cover_groups_algaelabelset.csv", row.names = FALSE)
+  #file = "NAME OF FILE.csv"
+```
+```{r Making dataframe of T_group_algae for statistical analyses, algaelabelset applied}
+# Create the new dataframe with one row per unique T_number
+new_df3 <- T_group_algae %>%
+  pivot_wider(
+    names_from = Functional_group,
+    values_from = Percent_Cover,
+    values_fill = 0)  # Replace missing values with 0 if any
+
+#Summing new dataframe
+S_T_group_algae <- new_df3 %>%
+  group_by(T_number) %>%
+  summarise_all(sum) %>%
+  ungroup()
+
+# Download table as .csv file (it saves in the folder you saved as the working directory)
+write.csv(S_T_group_algae, file = "df_%cover_groups_algaelabelset_final.csv", row.names = FALSE)
+  #file = "NAME OF FILE.csv"
+```
+
+##Merging fish data with % cover dataframes
+```{r S_T_group_base + fishrawdf}
+# Merge with all rows from "S_T_group_base" and matching rows from "fishrawdf"
+merged_df_final <- merge(S_T_group_base, fishrawdf, by = "T_number", all.x = TRUE)
+
+# Merge with all rows from "fishrawdf" and matching rows from "S_T_group_base"
+merged_df_final <- merge(S_T_group_base, fishrawdf, by = "T_number", all.y = TRUE)
+
+# Merge with all rows from both data frames (full outer join)
+merged_df_final <- merge(S_T_group_base, fishrawdf, by = "T_number", all = TRUE)
+
+write.csv(merged_df_final, file = "finaldata_baselabelset.csv", row.names = FALSE)
+
+```
+```{r S_T_group_PCOM + fishrawdf}
+# Merge with all rows from "S_T_group_PCOM" and matching rows from "fishrawdf"
+merged_df_final_PCOM <- merge(S_T_group_PCOM, fishrawdf, by = "T_number", all.x = TRUE)
+
+# Merge with all rows from "fishrawdf" and matching rows from "S_T_group_PCOM"
+merged_df_final_PCOM <- merge(S_T_group_PCOM, fishrawdf, by = "T_number", all.y = TRUE)
+
+# Merge with all rows from both data frames (full outer join)
+merged_df_final_PCOM <- merge(S_T_group_PCOM, fishrawdf, by = "T_number", all = TRUE)
+
+write.csv(merged_df_final_PCOM, file = "finaldata_PCOMlabelset.csv", row.names = FALSE)
+
+```
+```{r S_T_group_algae + fishrawdf}
+# Merge with all rows from "S_T_group_PCOM" and matching rows from "fishrawdf"
+merged_df_final_algae <- merge(S_T_group_algae, fishrawdf, by = "T_number", all.x = TRUE)
+
+# Merge with all rows from "fishrawdf" and matching rows from "S_T_group_PCOM"
+merged_df_final_algae <- merge(S_T_group_algae, fishrawdf, by = "T_number", all.y = TRUE)
+
+# Merge with all rows from both data frames (full outer join)
+merged_df_final_algae <- merge(S_T_group_algae, fishrawdf, by = "T_number", all = TRUE)
+
+write.csv(merged_df_final_algae, file = "finaldata_algaelabelset.csv", row.names = FALSE)
+
+```
